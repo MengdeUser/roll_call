@@ -1,5 +1,8 @@
 {
-    "version": "0.1.7",
-    "release_date": "2024-06-12",
-    "download_url": "https://github.com/MengdeUser/roll_call/releases/latest/setup.rar"
+    "version": "0.1.8",
+    "release_date": "2024-06-20",
+    "download_url": "https://github.com/MengdeUser/roll_call/releases/download/v0.1.8/setup.rar",
+    "changelog": "https://github.com/MengdeUser/roll_call/releases",
+    "notes": "修改及提升检测更新配置，修改网站设置，注册GitHub账户，开放源码",
+    "minimum_required_version": "0.1.8"
 }
