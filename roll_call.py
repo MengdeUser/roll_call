@@ -128,7 +128,7 @@ def setup():
 
 def main():
     # 定义一个标志文件的路径
-    flag_file_path = '_internal/first_run_flag.txt'
+    flag_file_path = '_internal/res/first_run_flag.txt'
 
     def is_first_run():
         # 检查标志文件是否存在
@@ -166,7 +166,7 @@ def main():
             go()
         else:
             # 指定要删除的文件路径
-            file_path = '_internal/first_run_flag.txt'
+            file_path = '_internal/res/first_run_flag.txt'
             # 删除文件
             os.remove(file_path)
             sys.exit(0)
