@@ -5,13 +5,14 @@
 备注说明来意。
 """
 import os
+import subprocess
 import sys
 import time
 import json
 import random
-import requests
 import win32gui
 import win32con
+import requests
 import pyautogui
 import webbrowser
 import win32com.client
@@ -23,10 +24,10 @@ from tkinter import messagebox
 
 __author__ = "梦与拾光遇"
 # 软件的当前版本
-current_version = "0.1.7"  # 请替换为实际的当前版本号
+current_version = "v0.1.8"  # 请替换为实际的当前版本号
 new = 'https://www.123pan.com/s/jRAxjv-iGBWA.html'
-web = 'https://mengde.seabedsmc.asia'
-hub = 'https://github.com/MengdeGit-ctrl/roll_call'
+web = 'https://mengdeuser.github.io/roll_call/'
+hub = 'https://github.com/MengdeUser/roll_call'
 names = ["李宇轩", "杨政皓", "高逸航", "高子航", "石博宇", "张高菲", "陈赞彭", "杨凯琪", "杜雨嘉诺", "马欣妍"]
 kfz = 0
 
@@ -43,98 +44,86 @@ def set_window_transparency(window_handle, transparency):
 
 
 def setup():
-    # 启动软件的函数
-    def start_software():
-        try:
-            app5 = messagebox.askokcancel("软件启动", "启动安装软件...")
-            if app5:
-                os.system("_internal\\setup.exe")
-            else:
-                sys.exit(0)
-            # 这里添加启动软件的代码
-        except Exception as e:
-            messagebox.askokcancel("软件启动", f"启动软件时发生错误：{e}")
-            sys.exit(0)
+    # GitHub仓库URL
+    GITHUB_REPO_URL = "https://api.github.com/repos/MengdeUser/roll_call/releases/latest"
+    # 本地软件版本
+    LOCAL_VERSION = current_version  # 请替换为你的软件当前版本
+    # 本地软件安装路径
+    INSTALL_PATH = os.path.join(os.path.dirname(__file__), "setup.exe")  # 请替换为你的软件安装路径
 
-    # 检查更新的函数
-    def check_for_updates():
+    def get_latest_version():
+        """从GitHub获取最新版本信息"""
         try:
-            # 获取最新版本信息的URL
-            latest_version_url = "https://mengde.seabedsmc.asia/latest_version.json"  # 替换为实际的URL
-            response = requests.get(latest_version_url)
-            if response.status_code == 200:
-                latest_version_data = response.json()
-                latest_version = latest_version_data.get("version", "0.0.0")  # 假设JSON中包含一个名为"version"的键
-                return latest_version
-            else:
-                app6 = messagebox.askokcancel("软件更新", "无法获取最新版本信息。")
-                if app6:
-                    main()
-                else:
-                    sys.exit(0)
-                return None
-        except Exception as e:
-            app7 = messagebox.askokcancel("软件更新", f"检查更新时发生错误：{e}")
-            if app7:
-                main()
-            else:
-                sys.exit(0)
+            response = requests.get(GITHUB_REPO_URL)
+            response.raise_for_status()
+            data = response.json()
+            return data['tag_name']
+        except requests.exceptions.RequestException as e:
+            messagebox.showinfo("提示", f"获取最新版本时出错: {e}")
             return None
 
-    # 下载最新版本的软件的函数
-    def download_latest_version():
-        try:
-            # 假设最新版本的软件下载链接是 http://example.com/software_latest.exe
-            download_url = f"https://mengde.seabedsmc.asia/setup.exe"  # 替换为实际的下载链接
-            local_path = os.path.join(os.path.dirname(__file__), "setup.exe")  # 替换为实际的本地路径
-            with requests.get(download_url, stream=True) as r:
-                r.raise_for_status()
-                with open(local_path, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=8192):
+    def download_file(progress_bar, progress_label, latest_version, root):
+        """下载并安装最新版本"""
+        # 这里需要根据实际情况编写下载和安装的代码
+        # 以下代码仅为示例
+        # 假设下载的安装包是setup.exe
+        # 下载命令
+        download_command = f"https://github.com/MengdeUser/roll_call/releases/download/{latest_version}/setup.exe"
+        # 执行下载
+        with requests.get(download_command, stream=True) as r:
+            r.raise_for_status()
+            total_length = int(r.headers.get('content-length', 1))
+            with open(INSTALL_PATH, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:  # 过滤掉保持连接的chunk
                         f.write(chunk)
-            app3 = messagebox.askokcancel("软件更新下载", f"下载了最新版本的软件到 {local_path}")
-            if app3:
-                start_software()
-            else:
-                sys.exit(0)
-            return True
-        except Exception as e:
-            app4 = messagebox.askokcancel("软件更新下载", f"下载最新版本的软件时发生错误：{e}")
-            if app4:
-                main()
-            else:
-                sys.exit(0)
-            return False
-
-    # 主函数
-    def detection():
-        # 检查更新
-        latest_version = check_for_updates()
-        if latest_version:
-            # 比较版本号
-            if latest_version > current_version:
-                messagebox.showwarning("软件更新",
-                                       f"发现新版本 {latest_version}，当前版本为 {current_version}。正在下载...")
-                download_latest_version()
-            elif latest_version == current_version:
-                app = messagebox.askokcancel("软件更新", "软件已是最新版本。")
-                if app:
-                    main()
-                else:
-                    sys.exit(0)
-            else:
-                app1 = messagebox.askokcancel("软件更新", "版本号格式不正确，无法比较。")
-                if app1:
-                    main()
-                else:
-                    sys.exit(0)
+                        downloaded = f.tell()
+                        # 更新进度条
+                        progress_bar['value'] = (downloaded / total_length) * 100
+                        progress_label['text'] = f"{downloaded / total_length * 100:.2f}%"
+                        root.update_idletasks()  # 更新GUI
+        root.destroy()
+        wait = messagebox.askyesno("提示", "您是否需要启用新版本安装程序？")
+        if wait:
+            # 运行安装后的软件
+            subprocess.run(f"{INSTALL_PATH}", shell=True)
         else:
-            app2 = messagebox.askokcancel("软件更新", "无法获取最新版本信息，将启动当前版本的软件。")
-            if app2:
-                main()
-            else:
-                sys.exit(0)
-    detection()
+            sys.exit(0)
+
+    def main1(latest_version):
+        root = tk.Tk()
+        root.title("下载进度")
+        root.iconbitmap('_internal\\res\\favicon.ico')
+        root.attributes("-topmost", True)
+        root.overrideredirect(True)
+        width = 400
+        height = 120
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        x = (screen_width / 2) - (width / 2)
+        y = (screen_height / 2) - (height / 2)
+        root.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
+        root.resizable(False, False)
+
+        showinfo = Label(text=f"下载和安装版本{latest_version}...", font=("汉仪文黑-85W", 15))
+        showinfo.pack(pady=5)
+        # 创建进度条
+        progress_bar = ttk.Progressbar(root, orient='horizontal', length=300, mode='determinate')
+        progress_bar.pack(pady=10)
+        # 创建进度标签
+        progress_label = tk.Label(root, text="0%")
+        progress_label.pack(pady=5)
+
+        latest_version = get_latest_version()
+        if latest_version > LOCAL_VERSION:
+            download_file(progress_bar, progress_label, latest_version, root)
+        else:
+            # 这里添加预运行的代码
+            root.destroy()
+            main()
+
+        root.mainloop()
+    main1(latest_version=get_latest_version())
 
 
 def main():
@@ -372,77 +361,88 @@ def second_window():
             def gx():
                 xck.withdraw()
 
-                # 启动软件的函数
-                def start_software():
-                    try:
-                        messagebox.showinfo("软件启动", "启动软件...")
-                        xck.destroy()
-                        settings.destroy()
-                        splash.destroy()
-                        os.system("_internal\\setup.exe")
-                        # 这里添加启动软件的代码
-                    except Exception as e:
-                        messagebox.showwarning("软件启动", f"启动软件时发生错误：{e}")
-                        xck.deiconify()
+                # GitHub仓库URL
+                GITHUB_REPO_URL = "https://api.github.com/repos/MengdeUser/roll_call/releases/latest"
+                # 本地软件版本
+                LOCAL_VERSION = current_version  # 请替换为你的软件当前版本
+                # 本地软件安装路径
+                INSTALL_PATH = os.path.join(os.path.dirname(__file__), "setup.exe")  # 请替换为你的软件安装路径
 
-                # 检查更新的函数
-                def check_for_updates():
+                def get_latest_version():
+                    """从GitHub获取最新版本信息"""
                     try:
-                        # 获取最新版本信息的URL
-                        latest_version_url = "https://mengde.seabedsmc.asia/latest_version.json"  # 替换为实际的URL
-                        response = requests.get(latest_version_url)
-                        if response.status_code == 200:
-                            latest_version_data = response.json()
-                            latest_version = latest_version_data.get("version", "0.0.0")  # 假设JSON中包含一个名为"version"的键
-                            return latest_version
-                        else:
-                            messagebox.showwarning("软件更新", "无法获取最新版本信息。")
-                            xck.deiconify()
-                            return None
-                    except Exception as e:
-                        messagebox.showwarning("软件更新", f"检查更新时发生错误：{e}")
-                        xck.deiconify()
+                        response = requests.get(GITHUB_REPO_URL)
+                        response.raise_for_status()
+                        data = response.json()
+                        return data['tag_name']
+                    except requests.exceptions.RequestException as e:
+                        messagebox.showinfo("提示", f"获取最新版本时出错: {e}")
                         return None
 
-                # 下载最新版本的软件的函数
-                def download_latest_version():
-                    try:
-                        # 假设最新版本的软件下载链接是 http://example.com/software_latest.exe
-                        download_url = f"https://mengde.seabedsmc.asia/setup.exe"  # 替换为实际的下载链接
-                        local_path = os.path.join(os.path.dirname(__file__), "setup.exe")  # 替换为实际的本地路径
-                        with requests.get(download_url, stream=True) as r:
-                            r.raise_for_status()
-                            with open(local_path, 'wb') as f:
-                                for chunk in r.iter_content(chunk_size=8192):
+                def download_file(progress_bar, progress_label, latest_version, root):
+                    """下载并安装最新版本"""
+                    # 这里需要根据实际情况编写下载和安装的代码
+                    # 以下代码仅为示例
+                    # 假设下载的安装包是setup.exe
+                    # 下载命令
+                    download_command = f"https://github.com/MengdeUser/roll_call/releases/download/{latest_version}/setup.exe"
+                    # 执行下载
+                    with requests.get(download_command, stream=True) as r:
+                        r.raise_for_status()
+                        total_length = int(r.headers.get('content-length', 1))
+                        with open(INSTALL_PATH, 'wb') as f:
+                            for chunk in r.iter_content(chunk_size=8192):
+                                if chunk:  # 过滤掉保持连接的chunk
                                     f.write(chunk)
-                        messagebox.showinfo("软件更新下载", f"下载了最新版本的软件到 {local_path}")
-                        start_software()
-                        return True
-                    except Exception as e:
-                        messagebox.showwarning("软件更新下载", f"下载最新版本的软件时发生错误：{e}")
-                        xck.deiconify()
-                        return False
-
-                # 主函数
-                def main():
-                    # 检查更新
-                    latest_version = check_for_updates()
-                    if latest_version:
-                        # 比较版本号
-                        if latest_version > current_version:
-                            messagebox.showwarning("软件更新",
-                                                   f"发现新版本 {latest_version}，当前版本为 {current_version}。正在下载...")
-                            download_latest_version()
-                        elif latest_version == current_version:
-                            messagebox.showinfo("软件更新", "软件已是最新版本。")
-                            xck.deiconify()
-                        else:
-                            messagebox.showwarning("软件更新", "版本号格式不正确，无法比较。")
-                            xck.deiconify()
+                                    downloaded = f.tell()
+                                    # 更新进度条
+                                    progress_bar['value'] = (downloaded / total_length) * 100
+                                    progress_label['text'] = f"{downloaded / total_length * 100:.2f}%"
+                                    root.update_idletasks()  # 更新GUI
+                    root.destroy()
+                    wait = messagebox.askyesno("提示", "您是否需要启用新版本安装程序？")
+                    if wait:
+                        # 运行安装后的软件
+                        subprocess.run(f"{INSTALL_PATH}", shell=True)
                     else:
-                        messagebox.showwarning("软件更新", "无法获取最新版本信息，将启动当前版本的软件。")
+                        sys.exit(0)
+
+                def main1(latest_version):
+                    root = tk.Tk()
+                    root.title("下载进度")
+                    root.iconbitmap('_internal\\res\\favicon.ico')
+                    root.attributes("-topmost", True)
+                    root.overrideredirect(True)
+                    width = 400
+                    height = 120
+                    screen_width = root.winfo_screenwidth()
+                    screen_height = root.winfo_screenheight()
+                    x = (screen_width / 2) - (width / 2)
+                    y = (screen_height / 2) - (height / 2)
+                    root.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
+                    root.resizable(False, False)
+
+                    showinfo = Label(root, text=f"下载和安装版本{latest_version}...", font=("汉仪文黑-85W", 15))
+                    showinfo.pack(pady=5)
+                    # 创建进度条
+                    progress_bar = ttk.Progressbar(root, orient='horizontal', length=300, mode='determinate')
+                    progress_bar.pack(pady=10)
+                    # 创建进度标签
+                    progress_label = tk.Label(root, text="0%")
+                    progress_label.pack(pady=5)
+
+                    latest_version = get_latest_version()
+                    if latest_version > LOCAL_VERSION:
+                        download_file(progress_bar, progress_label, latest_version, root)
+                    else:
+                        # 这里添加预运行的代码
+                        root.destroy()
+                        messagebox.showinfo("提示", "已是最新版本！")
                         xck.deiconify()
-                main()
+
+                    root.mainloop()
+
+                main1(latest_version=get_latest_version())
 
             def gw():
                 # 打开网页
@@ -552,9 +552,9 @@ def second_window():
     set_window_transparency(splash.winfo_id(), 70)
 
     button = Button(splash, text='点名', font=('汉仪文黑-85W', 25), command=a, width=4, height=1)
-    button1 = Button(splash, text='X', font=('汉仪文黑-85W', 9), command=k, width=2, height=1)
-    button2 = Button(splash, text='-', font=('汉仪文黑-85W', 9), command=t, width=2, height=1)
-    button3 = Button(splash, text='⿻', font=('汉仪文黑-85W', 9), command=d, width=2, height=1)
+    button1 = Button(splash, text='X', font=('汉仪文黑-85W', 8), command=k, width=2, height=1)
+    button2 = Button(splash, text='-', font=('汉仪文黑-85W', 8), command=t, width=2, height=1)
+    button3 = Button(splash, text='⿻', font=('汉仪文黑-85W', 8), command=d, width=2, height=1)
     button4 = Button(splash, text='设置', font=('汉仪文黑-85W', 8), command=s, width=4, height=1)
     button5 = Button(splash, text='↑\n↓', font=('汉仪文黑-85W', 9), command=y, width=1, height=3)
     button.pack(side='left', fill="y")
