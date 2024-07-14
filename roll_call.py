@@ -19,17 +19,19 @@ import win32com.client
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
+import tkintertools as tkt
 from tkinter import messagebox
 
 
-__author__ = "梦与拾光遇"
+__author__ = "拾光梦"
+
 # 软件的当前版本
-current_version = "v0.1.8"  # 请替换为实际的当前版本号
+current_version = "v0.1.9"  # 请替换为实际的当前版本号
 new = 'https://www.123pan.com/s/jRAxjv-iGBWA.html'
 web = 'https://mengdeuser.github.io/roll_call/'
 hub = 'https://github.com/MengdeUser/roll_call'
-names = ["李宇轩", "杨政皓", "高逸航", "高子航", "石博宇", "张高菲", "陈赞彭", "杨凯琪", "杜雨嘉诺", "马欣妍"]
 kfz = 0
+value = 0
 
 # 打开文件并读取内容
 with open('_internal/res/students.json', 'r', encoding='utf-8') as file:
@@ -41,6 +43,96 @@ def set_window_transparency(window_handle, transparency):
     win32gui.SetWindowLong(window_handle, win32con.GWL_EXSTYLE,
                            win32gui.GetWindowLong(window_handle, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED)
     win32gui.SetLayeredWindowAttributes(window_handle, 0, transparency * 255 // 100, win32con.LWA_ALPHA)
+
+
+def start():
+    startup = tkt.Tk()
+    startup.title("启动动画")
+    startup.iconbitmap('_internal\\res\\favicon.ico')
+    startup.attributes("-topmost", True)
+    startup.overrideredirect(True)
+    width = 640
+    height = 420
+    screen_width = startup.winfo_screenwidth()
+    screen_height = startup.winfo_screenheight()
+    x = (screen_width / 2) - (width / 2)
+    y = (screen_height / 2) - (height / 2)
+    startup.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
+    startup.resizable(True, True)
+
+    def edit_names():
+        startup.attributes("-topmost", False)
+        os.system("_internal\\res\\students.json")
+        time.sleep(1)
+        startup.attributes("-topmost", True)
+        cycle()
+
+    def website():
+        startup.attributes("-topmost", False)
+        # 打开网页
+        webbrowser.open(web)
+        ask = messagebox.askyesno('提示', "您是否想要继续加载此应用？")
+        if ask:
+            time.sleep(1)
+            startup.attributes("-topmost", True)
+            cycle()
+        else:
+            sys.exit(0)
+
+    def github():
+        startup.attributes("-topmost", False)
+        # 打开网页
+        webbrowser.open(hub)
+        ask = messagebox.askyesno('提示', "您是否想要继续加载此应用？")
+        if ask:
+            time.sleep(1)
+            startup.attributes("-topmost", True)
+            cycle()
+        else:
+            sys.exit(0)
+
+    image = tk.PhotoImage(file='_internal/res/bg0.png')
+    tk.Label(startup, image=image).place(width=width, height=height-60)
+    tk.Label(startup, text="在此之间你可以尝试先：", font=("汉仪文黑-85W", 20), bg='black', fg='yellow').pack(side="top", pady=10)
+    ttk.Button(startup, text="修改点名名单", command=edit_names).pack(side="top", anchor=W, padx=20, pady=20)
+    ttk.Button(startup, text="访问官网网站", command=website).pack(side="top", anchor=W, padx=20)
+    ttk.Button(startup, text="访问GitHub网站", command=github).pack(side="top", anchor=W, padx=20, pady=20)
+    pgb_occupancy = tk.Label(startup, text=' ', font=("微软雅黑", 2))
+    pgb_occupancy.pack(side="bottom", anchor=W)
+    pgb = ttk.Progressbar(startup, length=width-40)
+    pgb.pack(side="bottom", anchor=N)
+    pgb_label = tk.Label(startup, text=f"0%")
+    pgb_label.pack(padx=20, side="bottom", anchor=W)
+
+    def cycle():
+        global value
+
+        # 定义增加的范围
+        min_increment = 1
+        max_increment = 10
+
+        # 随机增加变量的值
+        value += random.randint(min_increment, max_increment)
+        pgb['value'] = value
+        pgb_label['text'] = f"{value}%"
+        startup.update_idletasks()
+        if value < 100:
+            startup.after(2000, cycle)
+        elif value == 100:
+            time.sleep(3)
+            startup.destroy()
+            main()
+        elif value > 100:
+            value1 = value-100
+            value = value-value1
+            pgb['value'] = value
+            pgb_label['text'] = f"{value}%"
+            time.sleep(3)
+            startup.destroy()
+            main()
+    cycle()
+
+    startup.mainloop()
 
 
 def setup():
@@ -103,7 +195,7 @@ def setup():
         x = (screen_width / 2) - (width / 2)
         y = (screen_height / 2) - (height / 2)
         root.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
-        root.resizable(False, False)
+        root.resizable(True, True)
 
         showinfo = Label(text=f"下载和安装版本{latest_version}...", font=("汉仪文黑-85W", 15))
         showinfo.pack(pady=5)
@@ -116,11 +208,11 @@ def setup():
 
         latest_version = get_latest_version()
         if latest_version > LOCAL_VERSION:
-            download_file(progress_bar, progress_label, latest_version, root)
+            root.after(200, download_file(progress_bar, progress_label, latest_version, root))
         else:
             # 这里添加预运行的代码
             root.destroy()
-            main()
+            start()
 
         root.mainloop()
     main1(latest_version=get_latest_version())
@@ -186,7 +278,8 @@ def go():
         if account.Name == '16514':
             admin = messagebox.askyesno('确认', '你是否需要进入到开发者模式')
             if admin:
-                welcome_Admin()
+                # welcome_Admin()
+                second_window()
             else:
                 second_window()
         else:
@@ -195,86 +288,7 @@ def go():
         # print(f"全名: {account.FullName}")
 
 
-def welcome_Admin():
-    def a():
-        def gb():
-            dm.destroy()
-            splash.deiconify()
-
-        splash.withdraw()
-        global name_label
-
-        def draw_name():
-            global names, name_label
-            if names:
-                names = ["李宇轩", "杨政皓", "高逸航", "高子航", "石博宇", "张高菲", "陈赞彭", "杨凯琪", "杜雨嘉诺", "马欣妍"]
-                chosen_name = random.choice(names)
-                name_label.config(text=chosen_name, font=("汉仪文黑-85W", 50), width=6)
-                names.remove(chosen_name)
-            else:
-                names = ["李宇轩", "杨政皓", "高逸航", "高子航", "石博宇", "张高菲", "陈赞彭", "杨凯琪", "杜雨嘉诺", "马欣妍"]
-
-        names = ["李宇轩", "杨政皓", "高逸航", "高子航", "石博宇", "张高菲", "陈赞彭", "杨凯琪", "杜雨嘉诺", "马欣妍"]
-
-        def set_window_position(dm, x, y):
-            # 仅仅设置窗口的位置，不改变大小
-            dm.geometry("+{}+{}".format(x, y))
-
-        # 创建tkinter窗口
-        dm = tk.Tk()
-        dm.title("点名程序")
-        dm.iconbitmap('_internal\\res\\favicon.ico')
-        dm.attributes("-topmost", True)
-        # 获取屏幕的宽度和高度
-        screen_width = dm.winfo_screenwidth()
-        screen_height = dm.winfo_screenheight()
-        # 设置窗口的位置为屏幕左下角
-        # 注意：Tkinter的坐标系统中，左上角是(0,0)，右下角坐标是(screen_width, screen_height)
-        set_window_position(dm, screen_width // 3, screen_height // 3)
-        dm.resizable(False, False)
-        dm.protocol("WM_DELETE_WINDOW", gb)
-
-        # 创建标签用于显示抽取的名字
-        name_label = tk.Label(dm, font=("汉仪文黑-85W", 50), width=6)
-        name_label.grid(row=0, column=1, padx=20, pady=5)
-
-        # 创建按钮用于抽取名字
-        draw_button = tk.Button(dm, text="抽取名字", command=draw_name)
-        draw_button.grid(row=1, column=1, padx=20, pady=10)
-
-        # 运行tkinter事件循环
-        dm.mainloop()
-
-    def set_window_position(splash, x, y):
-        # 仅仅设置窗口的位置，不改变大小
-        splash.geometry("+{}+{}".format(x, y))
-
-    # 主程序
-    splash = Tk()
-    splash.title("点名系统")
-    splash.iconbitmap('_internal\\res\\favicon.ico')
-    splash.attributes("-topmost", True)
-    # 获取屏幕的高度
-    screen_height = splash.winfo_screenheight()
-    # 设置窗口的位置为屏幕左下角
-    # 注意：Tkinter的坐标系统中，左上角是(0,0)，右下角坐标是(screen_width, screen_height)
-    set_window_position(splash, 10, 0+screen_height//2+screen_height//4+screen_height//12)
-    splash.overrideredirect(True)
-    splash.resizable(False, False)  # 禁止用户调整窗口的宽度和高度
-    set_window_transparency(splash.winfo_id(), 70)
-
-    button = Button(splash, text='点名', font=('汉仪文黑-85W', 25), command=a, width=4, height=1)
-    button1 = Button(splash, text='X', font=('汉仪文黑-85W', 9), width=2, height=1)
-    button2 = Button(splash, text='-', font=('汉仪文黑-85W', 9), width=2, height=1)
-    button3 = Button(splash, text='□', font=('汉仪文黑-85W', 9), width=2, height=1)
-    button4 = Button(splash, text='设置', font=('汉仪文黑-85W', 9), width=2, height=1)
-    button.pack(side='left', fill="y")
-    button1.pack(side='top')
-    button2.pack(side='top')
-    button3.pack(side='top')
-    button4.pack(side='top')
-
-    splash.mainloop()
+# def welcome_Admin():
 
 
 def second_window():
@@ -484,7 +498,7 @@ def second_window():
             title.grid(row=0, column=0, padx=20, pady=5, sticky=W)
             title1 = Label(xck, text='版本信息：', font=('汉仪文黑-85W', 13))
             title1.grid(row=1, column=0, padx=20, pady=10, sticky=W)
-            title2 = ttk.Button(xck, text='0.1.7', command=kfc)
+            title2 = ttk.Button(xck, text='v0.1.9', command=kfc)
             title2.grid(row=1, column=1, padx=0, pady=0, sticky=W)
             title3 = Label(xck, text='版本更新：', font=('汉仪文黑-85W', 13))
             bn = ttk.Button(xck, text='检查版本', command=gx)
@@ -568,7 +582,7 @@ def second_window():
 
 
 def is_process_running():
-    lock_file = '_internal/my_program.lock'
+    lock_file = '_internal/res/my_program.lock'
     if os.path.exists(lock_file):
         return True
     else:
@@ -584,4 +598,4 @@ else:
         # 你的程序代码
         setup()
     finally:
-        os.remove('_internal\\my_program.lock')
+        os.remove('_internal\\res\\my_program.lock')
