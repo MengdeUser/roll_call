@@ -5,32 +5,39 @@
 备注说明来意。
 """
 import os
-import subprocess
 import sys
 import time
 import json
 import random
+
+import Image
+import pystray
+import win32com.client
 import win32gui
 import win32con
 import requests
-import pyautogui
+import threading
+import subprocess
 import webbrowser
-import win32com.client
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 import tkintertools as tkt
+from PIL import ImageTk, Image
+from pystray import MenuItem
 from tkinter import messagebox
 
 
 __author__ = "拾光梦"
 
+
 # 软件的当前版本
-current_version = "v0.1.9"  # 请替换为实际的当前版本号
+current_version = "v0.2.0"  # 请替换为实际的当前版本号
 new = 'https://www.123pan.com/s/jRAxjv-iGBWA.html'
 web = 'https://mengdeuser.github.io/roll_call/'
 hub = 'https://github.com/MengdeUser/roll_call'
 kfz = 0
+two = 0
 value = 0
 
 # 打开文件并读取内容
@@ -93,7 +100,7 @@ def start():
 
     image = tk.PhotoImage(file='_internal/res/bg0.png')
     tk.Label(startup, image=image).place(width=width, height=height-60)
-    tk.Label(startup, text="在此之间你可以尝试先：", font=("汉仪文黑-85W", 20), bg='black', fg='yellow').pack(side="top", pady=10)
+    tk.Label(startup, text="在此之前你可以尝试先：", font=("汉仪文黑-85W", 20), bg='black', fg='yellow').pack(side="top", pady=10)
     ttk.Button(startup, text="修改点名名单", command=edit_names).pack(side="top", anchor=W, padx=20, pady=20)
     ttk.Button(startup, text="访问官网网站", command=website).pack(side="top", anchor=W, padx=20)
     ttk.Button(startup, text="访问GitHub网站", command=github).pack(side="top", anchor=W, padx=20, pady=20)
@@ -117,17 +124,16 @@ def start():
         pgb_label['text'] = f"{value}%"
         startup.update_idletasks()
         if value < 100:
-            startup.after(2000, cycle)
-        elif value == 100:
-            time.sleep(3)
-            startup.destroy()
-            main()
+            startup.after(1500, cycle)
         elif value > 100:
-            value1 = value-100
-            value = value-value1
+            value = 100
             pgb['value'] = value
             pgb_label['text'] = f"{value}%"
-            time.sleep(3)
+            time.sleep(2)
+            startup.destroy()
+            main()
+        elif value == 100:
+            time.sleep(2)
             startup.destroy()
             main()
     cycle()
@@ -255,7 +261,7 @@ def main():
                                                 f'三班出品，必属精品。\n版权归编者所有；\n有意者加wx：Z18241291013或者QQ：1651473590；\n备注说明来意。'
                                                 f'建议与反馈\nQQ群：497499805')
         if result:
-            go()
+            second_window()
         else:
             # 指定要删除的文件路径
             file_path = '_internal/res/first_run_flag.txt'
@@ -263,32 +269,7 @@ def main():
             os.remove(file_path)
             sys.exit(0)
     else:
-        go()
-
-
-def go():
-    # 创建WMI对象
-    wmi = win32com.client.GetObject("winmgmts:")
-
-    # 查询所有用户账户
-    accounts = wmi.ExecQuery("SELECT * FROM Win32_UserAccount")
-
-    # 遍历用户账户并打印信息
-    for account in accounts:
-        if account.Name == '16514':
-            admin = messagebox.askyesno('确认', '你是否需要进入到开发者模式')
-            if admin:
-                # welcome_Admin()
-                second_window()
-            else:
-                second_window()
-        else:
-            second_window()
-        # print(f"用户名: {account.Name}")
-        # print(f"全名: {account.FullName}")
-
-
-# def welcome_Admin():
+        second_window()
 
 
 def second_window():
@@ -315,10 +296,6 @@ def second_window():
         with open('_internal/res/students.json', 'r', encoding='utf-8') as file:
             names_list = json.load(file)
 
-        def set_window_position(dm, x, y):
-            # 仅仅设置窗口的位置，不改变大小
-            dm.geometry("+{}+{}".format(x, y))
-
         # 创建tkinter窗口
         dm = tk.Tk()
         dm.title("点名程序")
@@ -329,17 +306,20 @@ def second_window():
         # 获取屏幕的宽度和高度
         screen_width = dm.winfo_screenwidth()
         screen_height = dm.winfo_screenheight()
+        win_width = int(screen_width * 0.2)
+        win_height = int(screen_height * 0.2)
+        width = dm.winfo_width()
+        height = dm.winfo_height()
         # 设置窗口的位置为屏幕左下角
-        # 注意：Tkinter的坐标系统中，左上角是(0,0)，右下角坐标是(screen_width, screen_height)
-        set_window_position(dm, screen_width // 3, screen_height // 2)
+        dm.geometry(f"{win_width}x{win_height}+{screen_width//2-width//2}+{screen_height//2-height//2}")
 
         # 创建标签用于显示抽取的名字
         name_label = tk.Label(dm, font=("汉仪文黑-85W", 50), width=6)
-        name_label.grid(row=0, column=1, padx=20, pady=5)
+        name_label.pack()
 
         # 创建按钮用于抽取名字
         draw_button = tk.Button(dm, text="抽取名字", command=draw_name)
-        draw_button.grid(row=1, column=1, padx=20, pady=10)
+        draw_button.pack(ipady='2')
 
         # 运行tkinter事件循环
         dm.mainloop()
@@ -469,14 +449,6 @@ def second_window():
                 settings.deiconify()
                 xck.destroy()
 
-            def kfc():
-                global kfz
-                kfz += 1
-                if kfz == 14:
-                    messagebox.showinfo("来自制作组弹窗", "您已进入开发者模式")
-                elif kfz >= 15:
-                    messagebox.showinfo("来自制作组弹窗", "别按了你已经进入开发者模式了")
-
             settings.withdraw()
 
             xck = Tk()
@@ -498,7 +470,7 @@ def second_window():
             title.grid(row=0, column=0, padx=20, pady=5, sticky=W)
             title1 = Label(xck, text='版本信息：', font=('汉仪文黑-85W', 13))
             title1.grid(row=1, column=0, padx=20, pady=10, sticky=W)
-            title2 = ttk.Button(xck, text='v0.1.9', command=kfc)
+            title2 = Label(xck, text=f'{current_version}')
             title2.grid(row=1, column=1, padx=0, pady=0, sticky=W)
             title3 = Label(xck, text='版本更新：', font=('汉仪文黑-85W', 13))
             bn = ttk.Button(xck, text='检查版本', command=gx)
@@ -522,61 +494,54 @@ def second_window():
 
     def k():
         # 关闭
-        sys.exit(0)
+        icon.stop()
+        splash.destroy()
 
     def t():
-        # 最小化
-        splash.overrideredirect(False)
-        pyautogui.keyDown('alt')
-        pyautogui.press('space')
-        time.sleep(0.1)
-        pyautogui.press('n')
-        pyautogui.keyUp('alt')
+        global two
+        if two == 0:
+            splash.withdraw()
+            two += 1
+        elif two == 1:
+            splash.deiconify()
+            two -= 1
+        else:
+            two = 0
 
-    def d():
-        # 还原
-        splash.overrideredirect(True)
-        splash.attributes("-topmost", True)
+    def open():
+        shell = win32com.client.Dispatch("WScript.Shell")
+        shell.Run("C:\\Windows\\explorer.exe", 1, False)
 
-    def y():
-        # 移动
-        splash.overrideredirect(False)
-        pyautogui.keyDown('alt')
-        pyautogui.press('space')
-        time.sleep(0.1)
-        pyautogui.press('m')
-        pyautogui.keyUp('alt')
-
-    def set_window_position(splash, x, y):
-        # 仅仅设置窗口的位置，不改变大小
-        splash.geometry("+{}+{}".format(x, y))
 
     # 主程序
     splash = Tk()
     splash.title("点名系统")
     splash.iconbitmap('_internal\\res\\favicon.ico')
     splash.attributes("-topmost", True)
-    # 获取屏幕的高度
+    # 获取屏幕的宽度和高度
     screen_height = splash.winfo_screenheight()
-    # 设置窗口的位置为屏幕左下角
-    # 注意：Tkinter的坐标系统中，左上角是(0,0)，右下角坐标是(screen_width, screen_height)
-    set_window_position(splash, 10, 0+screen_height//2+screen_height//4+screen_height//16)
+    # 获取窗口的高度
+    height = 80
+    splash.geometry(f"60x{height}+20+{screen_height//2-height//2}")
     splash.overrideredirect(True)
     splash.resizable(False, False)  # 禁止用户调整窗口的宽度和高度
     set_window_transparency(splash.winfo_id(), 70)
 
-    button = Button(splash, text='点名', font=('汉仪文黑-85W', 25), command=a, width=4, height=1)
-    button1 = Button(splash, text='X', font=('汉仪文黑-85W', 8), command=k, width=2, height=1)
-    button2 = Button(splash, text='-', font=('汉仪文黑-85W', 8), command=t, width=2, height=1)
-    button3 = Button(splash, text='⿻', font=('汉仪文黑-85W', 8), command=d, width=2, height=1)
-    button4 = Button(splash, text='设置', font=('汉仪文黑-85W', 8), command=s, width=4, height=1)
-    button5 = Button(splash, text='↑\n↓', font=('汉仪文黑-85W', 9), command=y, width=1, height=3)
-    button.pack(side='left', fill="y")
-    button4.pack(side='bottom', fill='x')
-    button5.pack(side='right', fill='y')
-    button1.pack(side='top')
-    button2.pack(side='top')
-    button3.pack(side='top')
+    button = Button(splash, text='点名', font=('汉仪文黑-85W', 18), command=a)
+    button.pack(fill="x")
+    photo = Image.open(os.path.dirname(os.path.abspath(__file__)) + '\\_internal\\res\\explorer.png')
+    image = ImageTk.PhotoImage(photo)
+    button_1 = Button(splash, image=image, command=open)
+    button_1.pack(fill="x")
+
+    from PIL import Image
+
+    menu = (MenuItem(text='点击托盘图标显示', action=t, default=True, visible=False),
+            MenuItem('设置', s),
+            MenuItem('退出', k))
+    image = Image.open("_internal/res/favicon.png")
+    icon = pystray.Icon("name", image, "鼠标点击托盘图标显隐程序", menu)
+    threading.Thread(target=icon.run, daemon=True).start()
 
     splash.mainloop()
 
@@ -596,6 +561,7 @@ if is_process_running():
 else:
     try:
         # 你的程序代码
-        setup()
+        # setup()
+        main()
     finally:
         os.remove('_internal\\res\\my_program.lock')
