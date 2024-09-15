@@ -9,21 +9,19 @@ import sys
 import time
 import json
 import random
-
-import Image
+import winreg
 import pystray
-import win32com.client
 import win32gui
 import win32con
 import requests
 import threading
 import subprocess
 import webbrowser
+import win32com.client
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 import tkintertools as tkt
-from PIL import ImageTk, Image
 from pystray import MenuItem
 from tkinter import messagebox
 
@@ -32,7 +30,7 @@ __author__ = "拾光梦"
 
 
 # 软件的当前版本
-current_version = "v0.2.0"  # 请替换为实际的当前版本号
+current_version = "v0.2.1"  # 请替换为实际的当前版本号
 new = 'https://www.123pan.com/s/jRAxjv-iGBWA.html'
 web = 'https://mengdeuser.github.io/roll_call/'
 hub = 'https://github.com/MengdeUser/roll_call'
@@ -55,7 +53,7 @@ def set_window_transparency(window_handle, transparency):
 def start():
     startup = tkt.Tk()
     startup.title("启动动画")
-    startup.iconbitmap('_internal\\res\\favicon.ico')
+    startup.iconbitmap('_internal\\res\\pictures\\favicon.ico')
     startup.attributes("-topmost", True)
     startup.overrideredirect(True)
     width = 640
@@ -69,7 +67,8 @@ def start():
 
     def edit_names():
         startup.attributes("-topmost", False)
-        os.system("_internal\\res\\students.json")
+        shell = win32com.client.Dispatch("WScript.Shell")
+        shell.Run(".\\_internal\\res\\students.json", 1, False)
         time.sleep(1)
         startup.attributes("-topmost", True)
         cycle()
@@ -98,7 +97,7 @@ def start():
         else:
             sys.exit(0)
 
-    image = tk.PhotoImage(file='_internal/res/bg0.png')
+    image = tk.PhotoImage(file='_internal/res/pictures/bg0.png')
     tk.Label(startup, image=image).place(width=width, height=height-60)
     tk.Label(startup, text="在此之前你可以尝试先：", font=("汉仪文黑-85W", 20), bg='black', fg='yellow').pack(side="top", pady=10)
     ttk.Button(startup, text="修改点名名单", command=edit_names).pack(side="top", anchor=W, padx=20, pady=20)
@@ -124,11 +123,12 @@ def start():
         pgb_label['text'] = f"{value}%"
         startup.update_idletasks()
         if value < 100:
-            startup.after(1500, cycle)
+            startup.after(random.randint(100, 1000), cycle)
         elif value > 100:
             value = 100
             pgb['value'] = value
             pgb_label['text'] = f"{value}%"
+            startup.update_idletasks()
             time.sleep(2)
             startup.destroy()
             main()
@@ -191,7 +191,7 @@ def setup():
     def main1(latest_version):
         root = tk.Tk()
         root.title("下载进度")
-        root.iconbitmap('_internal\\res\\favicon.ico')
+        root.iconbitmap('_internal\\res\\pictures\\favicon.ico')
         root.attributes("-topmost", True)
         root.overrideredirect(True)
         width = 400
@@ -225,22 +225,21 @@ def setup():
 
 
 def main():
-    # 定义一个标志文件的路径
-    flag_file_path = '_internal/res/first_run_flag.txt'
+    # 定义注册表路径和键值
+    app_name = "roll_call"  # 替换为你的应用程序名称
+    key_path = r"Software\roll_call"  # 替换为你的应用程序对应的注册表路径
+    key_name = "FirstRun"  # 第一次运行时设置的键值名称
 
-    def is_first_run():
-        # 检查标志文件是否存在
-        if not os.path.exists(flag_file_path):
-            # 如果文件不存在，创建文件并返回True表示是第一次运行
-            with open(flag_file_path, 'w') as file:
-                file.write('此程序已运行。')
-            return True
-        else:
-            # 如果文件存在，返回False表示不是第一次运行
-            return False
-
-    # 使用函数
-    if is_first_run():
+    # 尝试打开已存在的键值
+    try:
+        # 打开注册表项
+        reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
+        # 尝试读取键值
+        winreg.QueryValueEx(reg_key, key_name)
+        # 如果成功读取，说明不是第一次运行
+        winreg.CloseKey(reg_key)
+        second_window()
+    except FileNotFoundError:
         # 须知
         result = messagebox.askokcancel('用户须知', f'点名软件用户须知\n\n'
                                                 f'一、引言欢迎您使用点名软件！\n为了确保您能够顺利、安全地使用我们的软件，并充分了解相关权益和义务，我们特此制定了这份用户须知。'
@@ -261,15 +260,13 @@ def main():
                                                 f'三班出品，必属精品。\n版权归编者所有；\n有意者加wx：Z18241291013或者QQ：1651473590；\n备注说明来意。'
                                                 f'建议与反馈\nQQ群：497499805')
         if result:
+            # 如果键值不存在，说明是第一次运行
+            # 创建键值
+            with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, key_path) as reg_key:
+                winreg.SetValueEx(reg_key, key_name, 0, winreg.REG_DWORD, 1)
             second_window()
         else:
-            # 指定要删除的文件路径
-            file_path = '_internal/res/first_run_flag.txt'
-            # 删除文件
-            os.remove(file_path)
             sys.exit(0)
-    else:
-        second_window()
 
 
 def second_window():
@@ -299,7 +296,7 @@ def second_window():
         # 创建tkinter窗口
         dm = tk.Tk()
         dm.title("点名程序")
-        dm.iconbitmap('_internal\\res\\favicon.ico')
+        dm.iconbitmap('_internal\\res\\pictures\\favicon.ico')
         dm.attributes("-topmost", True)
         dm.resizable(False, False)
         dm.protocol("WM_DELETE_WINDOW", gb)
@@ -333,7 +330,7 @@ def second_window():
         splash.withdraw()
         settings = Tk()
         settings.title("设置")
-        settings.iconbitmap('_internal\\res\\favicon.ico')
+        settings.iconbitmap('_internal\\res\\pictures\\favicon.ico')
         settings.attributes("-topmost", True)
         width = 500
         height = 500
@@ -347,7 +344,8 @@ def second_window():
 
         def edit_names():
             settings.withdraw()
-            os.system("_internal\\res\\students.json")
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shell.Run(".\\_internal\\res\\students.json", 1, False)
             settings.deiconify()
 
         def gy():
@@ -404,7 +402,7 @@ def second_window():
                 def main1(latest_version):
                     root = tk.Tk()
                     root.title("下载进度")
-                    root.iconbitmap('_internal\\res\\favicon.ico')
+                    root.iconbitmap('_internal\\res\\pictures\\favicon.ico')
                     root.attributes("-topmost", True)
                     root.overrideredirect(True)
                     width = 400
@@ -454,7 +452,7 @@ def second_window():
             xck = Tk()
 
             xck.title("关于")
-            xck.iconbitmap('_internal\\res\\favicon.ico')
+            xck.iconbitmap('_internal\\res\\pictures\\favicon.ico')
             xck.attributes("-topmost", True)
             width = 500
             height = 500
@@ -492,6 +490,55 @@ def second_window():
 
         settings.mainloop()
 
+    def explorer():
+        try:
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shell.Run("C:\\Windows\\explorer.exe", 1, False)
+        except Exception as e:
+            messagebox.showerror('错误', f'文件路径不存在，请检查文件\n{e}')
+
+    def msedge():
+        try:
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shell.Run("microsoft-edge:http://www.bing.com")
+        except Exception as e:
+            messagebox.showerror('错误', f'该电脑没有安装Edge浏览器或者访问次数过多\n{e}')
+
+    def WeChat():
+        try:
+            subprocess.Popen(["C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\微信.lnk"], shell=True)
+        except Exception as e:
+            messagebox.showerror('错误', f'文件不存在\n{e}')
+
+    def swenlauncher():
+        try:
+            subprocess.Popen(["C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\希沃软件\\希沃白板 5\\希沃白板 5.lnk"], shell=True)
+        except Exception as e:
+            messagebox.showerror('错误', f'软件不存在\n{e}')
+
+    def air():
+        splash.withdraw()
+
+        def last():
+            win.destroy()
+            splash.deiconify()
+            splash.after(10000, air)
+        win = Tk()
+        win.attributes("-topmost", True)
+        # 获取屏幕的宽度和高度
+        screen_height = win.winfo_screenheight()
+        # 获取窗口的高度
+        height = 50
+        win.geometry(f"20x{height}+0+{screen_height//2-height//2}")
+        win.overrideredirect(True)
+        win.resizable(False, False)  # 禁止用户调整窗口的宽度和高度
+        set_window_transparency(win.winfo_id(), 70)
+
+        little = Button(win, text='>', font=("汉仪文黑-85W", 18), command=last)
+        little.pack(fill='y')
+
+        win.mainloop()
+
     def k():
         # 关闭
         icon.stop()
@@ -508,60 +555,52 @@ def second_window():
         else:
             two = 0
 
-    def open():
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shell.Run("C:\\Windows\\explorer.exe", 1, False)
-
-
     # 主程序
     splash = Tk()
     splash.title("点名系统")
-    splash.iconbitmap('_internal\\res\\favicon.ico')
+    splash.iconbitmap('_internal\\res\\pictures\\favicon.ico')
     splash.attributes("-topmost", True)
     # 获取屏幕的宽度和高度
     screen_height = splash.winfo_screenheight()
     # 获取窗口的高度
-    height = 80
-    splash.geometry(f"60x{height}+20+{screen_height//2-height//2}")
+    height = 223
+    splash.geometry(f"60x{height}+15+{screen_height//2-height//2}")
     splash.overrideredirect(True)
     splash.resizable(False, False)  # 禁止用户调整窗口的宽度和高度
     set_window_transparency(splash.winfo_id(), 70)
+    splash.after(10000, air)
+
+    from PIL import Image
 
     button = Button(splash, text='点名', font=('汉仪文黑-85W', 18), command=a)
     button.pack(fill="x")
-    photo = Image.open(os.path.dirname(os.path.abspath(__file__)) + '\\_internal\\res\\explorer.png')
-    image = ImageTk.PhotoImage(photo)
-    button_1 = Button(splash, image=image, command=open)
+    ico = '.\\_internal\\res\\pictures\\explorer.png'
+    photo = PhotoImage(file=ico)
+    button_1 = Button(splash, image=photo, command=explorer)
     button_1.pack(fill="x")
-
-    from PIL import Image
+    ico_1 = '.\\_internal\\res\\pictures\\msedge.png'
+    photo_1 = PhotoImage(file=ico_1)
+    button_2 = Button(splash, image=photo_1, command=msedge)
+    button_2.pack(fill="x")
+    ico_2 = '.\\_internal\\res\\pictures\\WeChat.png'
+    photo_2 = PhotoImage(file=ico_2)
+    button_3 = Button(splash, image=photo_2, command=WeChat)
+    button_3.pack(fill="x")
+    ico_3 = '.\\_internal\\res\\pictures\\swenlauncher.png'
+    photo_3 = PhotoImage(file=ico_3)
+    button_4 = Button(splash, image=photo_3, command=swenlauncher)
+    button_4.pack(fill="x")
 
     menu = (MenuItem(text='点击托盘图标显示', action=t, default=True, visible=False),
             MenuItem('设置', s),
             MenuItem('退出', k))
-    image = Image.open("_internal/res/favicon.png")
+    image = Image.open("_internal/res/pictures/favicon.png")
     icon = pystray.Icon("name", image, "鼠标点击托盘图标显隐程序", menu)
     threading.Thread(target=icon.run, daemon=True).start()
 
     splash.mainloop()
 
 
-def is_process_running():
-    lock_file = '_internal/res/my_program.lock'
-    if os.path.exists(lock_file):
-        return True
-    else:
-        with open(lock_file, 'w') as f:
-            f.write('锁定')
-        return False
-
-
-if is_process_running():
-    messagebox.showerror("警告", "程序已经在运行中")
-else:
-    try:
-        # 你的程序代码
-        # setup()
-        main()
-    finally:
-        os.remove('_internal\\res\\my_program.lock')
+if __name__ == "__main__":
+    start()
+    # main()
